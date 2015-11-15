@@ -104,23 +104,31 @@ _DROP_CODE_BAD_FRAGMENTATION = 3009
 
 
 class MuxUnexpectedException(Exception):
+
     """Exception in handling multiplexing extension."""
+
     pass
 
 
 # Temporary
 class MuxNotImplementedException(Exception):
+
     """Raised when a flow enters unimplemented code path."""
+
     pass
 
 
 class LogicalConnectionClosedException(Exception):
+
     """Raised when logical connection is gracefully closed."""
+
     pass
 
 
 class PhysicalConnectionError(Exception):
+
     """Raised when there is a physical connection error."""
+
     def __init__(self, drop_code, message=''):
         super(PhysicalConnectionError, self).__init__(
             'code=%d, message=%r' % (drop_code, message))
@@ -129,8 +137,11 @@ class PhysicalConnectionError(Exception):
 
 
 class LogicalChannelError(Exception):
+
     """Raised when there is a logical channel error."""
+
     def __init__(self, channel_id, drop_code, message=''):
+        """Initialize the error with a status message."""
         super(LogicalChannelError, self).__init__(
             'channel_id=%d, code=%d, message=%r' % (
                 channel_id, drop_code, message))
@@ -181,7 +192,7 @@ def _create_drop_channel(channel_id, code=None, message=''):
     first_byte = _MUX_OPCODE_DROP_CHANNEL << 5
     block = chr(first_byte) + _encode_channel_id(channel_id)
     if code is None:
-        block += _encode_number(0) # Reason size
+        block += _encode_number(0)  # Reason size
     else:
         reason = struct.pack('!H', code) + message
         reason_size = _encode_number(len(reason))
@@ -209,7 +220,7 @@ def _create_new_channel_slot(slots, send_quota):
 
 
 def _create_fallback_new_channel_slot():
-    first_byte = (_MUX_OPCODE_NEW_CHANNEL_SLOT << 5) | 1 # Set the F flag
+    first_byte = (_MUX_OPCODE_NEW_CHANNEL_SLOT << 5) | 1  # Set the F flag
     block = (chr(first_byte) + _encode_number(0) + _encode_number(0))
     return block
 
@@ -232,7 +243,9 @@ def _parse_request_text(request_text):
 
 
 class _ControlBlock(object):
+
     """A structure that holds parsing result of multiplexing control block.
+
     Control block specific attributes will be added by _MuxFramePayloadParser.
     (e.g. encoded_handshake will be added for AddChannelRequest and
     AddChannelResponse)
@@ -243,6 +256,7 @@ class _ControlBlock(object):
 
 
 class _MuxFramePayloadParser(object):
+
     """A class that parses multiplexed frame payload."""
 
     def __init__(self, payload):
@@ -251,13 +265,12 @@ class _MuxFramePayloadParser(object):
         self._logger = util.get_class_logger(self)
 
     def read_channel_id(self):
-        """Reads channel id.
+        """Read channel id.
 
         Raises:
             ValueError: when the payload doesn't contain
                 valid channel id.
         """
-
         remaining_length = len(self._data) - self._read_position
         pos = self._read_position
         if remaining_length == 0:
@@ -288,12 +301,11 @@ class _MuxFramePayloadParser(object):
         return channel_id
 
     def read_inner_frame(self):
-        """Reads an inner frame.
+        """Read an inner frame.
 
         Raises:
             PhysicalConnectionError: when the inner frame is invalid.
         """
-
         if len(self._data) == self._read_position:
             raise PhysicalConnectionError(
                 _DROP_CODE_ENCAPSULATED_FRAME_IS_TRUNCATED)
@@ -345,12 +357,11 @@ class _MuxFramePayloadParser(object):
         return number
 
     def _read_size_and_contents(self):
-        """Reads data that consists of followings:
+        """Read data that consists of the following:
             - the size of the contents encoded the same way as payload length
               of the WebSocket Protocol with 1 bit padding at the head.
             - the contents.
         """
-
         try:
             size = self._read_number()
         except ValueError, e:
@@ -455,14 +466,13 @@ class _MuxFramePayloadParser(object):
         return control_block
 
     def read_control_blocks(self):
-        """Reads control block(s).
+        """Read control block(s).
 
         Raises:
            PhysicalConnectionError: when the payload contains invalid control
                block(s).
            StopIteration: when no control blocks left.
         """
-
         while self._read_position < len(self._data):
             first_byte = ord(self._data[self._read_position])
             self._read_position += 1
@@ -488,17 +498,17 @@ class _MuxFramePayloadParser(object):
         raise StopIteration
 
     def remaining_data(self):
-        """Returns remaining data."""
-
+        """Return remaining data."""
         return self._data[self._read_position:]
 
 
 class _LogicalRequest(object):
+
     """Mimics mod_python request."""
 
     def __init__(self, channel_id, command, path, protocol, headers,
                  connection):
-        """Constructs an instance.
+        """Construct an instance.
 
         Args:
             channel_id: the channel id of the logical channel.
@@ -507,7 +517,6 @@ class _LogicalRequest(object):
             headers: HTTP headers.
             connection: _LogicalConnection instance.
         """
-
         self.channel_id = channel_id
         self.method = command
         self.uri = path
@@ -518,14 +527,16 @@ class _LogicalRequest(object):
         self.client_terminated = False
 
     def is_https(self):
-        """Mimics request.is_https(). Returns False because this method is
-        used only by old protocols (hixie and hybi00).
-        """
+        """Mimic request.is_https().
 
+        Returns False because this method is used only by old protocols
+        (hixie and hybi00).
+        """
         return False
 
 
 class _LogicalConnection(object):
+
     """Mimics mod_python mp_conn."""
 
     # For details, see the comment of set_read_state().
@@ -534,13 +545,12 @@ class _LogicalConnection(object):
     STATE_TERMINATED = 3
 
     def __init__(self, mux_handler, channel_id):
-        """Constructs an instance.
+        """Construct an instance.
 
         Args:
             mux_handler: _MuxHandler instance.
             channel_id: channel id of this connection.
         """
-
         self._mux_handler = mux_handler
         self._channel_id = channel_id
         self._incoming_data = ''
@@ -555,25 +565,23 @@ class _LogicalConnection(object):
 
     def get_local_addr(self):
         """Getter to mimic mp_conn.local_addr."""
-
         return self._mux_handler.physical_connection.get_local_addr()
     local_addr = property(get_local_addr)
 
     def get_remote_addr(self):
         """Getter to mimic mp_conn.remote_addr."""
-
         return self._mux_handler.physical_connection.get_remote_addr()
     remote_addr = property(get_remote_addr)
 
     def get_memorized_lines(self):
-        """Gets memorized lines. Not supported."""
-
+        """Get memorized lines. Not supported."""
         raise MuxUnexpectedException('_LogicalConnection does not support '
                                      'get_memorized_lines')
 
     def write(self, data):
-        """Writes data. mux_handler sends data asynchronously. The caller will
-        be suspended until write done.
+        """Write data. mux_handler sends data asynchronously.
+
+        The caller will be suspended until write done.
 
         Args:
             data: data to be written.
@@ -582,7 +590,6 @@ class _LogicalConnection(object):
             MuxUnexpectedException: when called before finishing the previous
                 write.
         """
-
         try:
             self._write_condition.acquire()
             if self._waiting_write_completion:
@@ -598,18 +605,17 @@ class _LogicalConnection(object):
             self._write_condition.release()
 
     def write_control_data(self, data):
-        """Writes data via the control channel. Don't wait finishing write
-        because this method can be called by mux dispatcher.
+        """Write data via the control channel.
 
+        Don't wait finishing write because this method can be called by
+        mux dispatcher.
         Args:
             data: data to be written.
         """
-
         self._mux_handler.send_control_data(data)
 
     def on_write_data_done(self):
         """Called when sending data is completed."""
-
         try:
             self._write_condition.acquire()
             if not self._waiting_write_completion:
@@ -623,7 +629,6 @@ class _LogicalConnection(object):
 
     def on_writer_done(self):
         """Called by the mux handler when the writer thread has finished."""
-
         try:
             self._write_condition.acquire()
             self._waiting_write_completion = False
@@ -631,24 +636,23 @@ class _LogicalConnection(object):
         finally:
             self._write_condition.release()
 
-
     def append_frame_data(self, frame_data):
-        """Appends incoming frame data. Called when mux_handler dispatches
-        frame data to the corresponding application.
+        """Append incoming frame data.
 
+        Called when mux_handler dispatches frame data to the corresponding
+        application.
         Args:
             frame_data: incoming frame data.
         """
-
         self._read_condition.acquire()
         self._incoming_data += frame_data
         self._read_condition.notify()
         self._read_condition.release()
 
     def read(self, length):
-        """Reads data. Blocks until enough data has arrived via physical
-        connection.
+        """Read data.
 
+        Blocks until enough data has arrived via physical connection.
         Args:
             length: length of data to be read.
         Raises:
@@ -657,7 +661,6 @@ class _LogicalConnection(object):
             ConnectionTerminatedException: when the physical connection has
                 closed, or an error is caused on the reader thread.
         """
-
         self._read_condition.acquire()
         while (self._read_state == self.STATE_ACTIVE and
                len(self._incoming_data) < length):
@@ -680,9 +683,9 @@ class _LogicalConnection(object):
         return value
 
     def set_read_state(self, new_state):
-        """Sets the state of this connection. Called when an event for this
-        connection has occurred.
+        """Set the state of this connection.
 
+        Called when an event for this connection has occurred.
         Args:
             new_state: state to be set. new_state must be one of followings:
             - STATE_GRACEFULLY_CLOSED: when closing handshake for this
@@ -690,7 +693,6 @@ class _LogicalConnection(object):
             - STATE_TERMINATED: when the physical connection has closed or
                 DropChannel of this connection has received.
         """
-
         self._read_condition.acquire()
         self._read_state = new_state
         self._read_condition.notify()
@@ -698,8 +700,8 @@ class _LogicalConnection(object):
 
 
 class _InnerMessage(object):
-    """Holds the result of _InnerMessageBuilder.build().
-    """
+
+    """Hold the result of _InnerMessageBuilder.build()."""
 
     def __init__(self, opcode, payload):
         self.opcode = opcode
@@ -707,7 +709,10 @@ class _InnerMessage(object):
 
 
 class _InnerMessageBuilder(object):
-    """A class that holds the context of inner message fragmentation and
+
+    """Class to build an _InnerMessage.
+
+    A class that holds the context of inner message fragmentation and
     builds a message from fragmented inner frame(s).
     """
 
@@ -791,9 +796,10 @@ class _InnerMessageBuilder(object):
         return _InnerMessage(opcode, payload)
 
     def build(self, frame):
-        """Build an inner message. Returns an _InnerMessage instance when
-        the given frame is the last fragmented frame. Returns None otherwise.
+        """Build an inner message.
 
+        Returns an _InnerMessage instance when the given frame is the last
+        fragmented frame. Returns None otherwise.
         Args:
             frame: an inner frame.
         Raises:
@@ -801,13 +807,14 @@ class _InnerMessageBuilder(object):
                 receiving non continuation data opcode but the fin flag of
                 the previous inner frame was not set.)
         """
-
         return self._frame_handler(frame)
 
 
 class _LogicalStream(Stream):
-    """Mimics the Stream class. This class interprets multiplexed WebSocket
-    frames.
+
+    """Mimics the Stream class.
+
+    This class interprets multiplexed WebSocket frames.
     """
 
     def __init__(self, request, stream_options, send_quota, receive_quota):
@@ -819,7 +826,6 @@ class _LogicalStream(Stream):
             send_quota: Initial send quota.
             receive_quota: Initial receive quota.
         """
-
         # Physical stream is responsible for masking.
         stream_options.unmask_receive = False
         Stream.__init__(self, request, stream_options)
