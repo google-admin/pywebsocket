@@ -609,6 +609,7 @@ class _LogicalConnection(object):
 
         Don't wait finishing write because this method can be called by
         mux dispatcher.
+
         Args:
             data: data to be written.
         """
@@ -641,6 +642,7 @@ class _LogicalConnection(object):
 
         Called when mux_handler dispatches frame data to the corresponding
         application.
+
         Args:
             frame_data: incoming frame data.
         """
@@ -653,6 +655,7 @@ class _LogicalConnection(object):
         """Read data.
 
         Blocks until enough data has arrived via physical connection.
+
         Args:
             length: length of data to be read.
         Raises:
@@ -800,6 +803,7 @@ class _InnerMessageBuilder(object):
 
         Returns an _InnerMessage instance when the given frame is the last
         fragmented frame. Returns None otherwise.
+
         Args:
             frame: an inner frame.
         Raises:

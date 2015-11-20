@@ -137,7 +137,7 @@ _LOGGER = logging.getLogger(__name__)
 
 
 def _parse_option(name, value, definition):
-    """Return the meaning of a option."""
+    """Return the meaning of a option value."""
     if value is None:
         return False
 
@@ -186,6 +186,7 @@ def headerparserhandler(request):
 
     Args:
         request: mod_python request.
+
     This function is named headerparserhandler because it is the default
     name for a PythonHeaderParserHandler.
     """

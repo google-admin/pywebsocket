@@ -152,10 +152,7 @@ def is_control_opcode(opcode):
 
 class ExtensionParameter(object):
 
-    """Holds information about an extension.
-
-    This is exchanged on extension negotiation in opening handshake.
-    """
+    """This is exchanged on extension negotiation in opening handshake."""
 
     def __init__(self, name):
         self._name = name
@@ -197,7 +194,7 @@ class ExtensionParameter(object):
 
 class ExtensionParsingException(Exception):
 
-    """Exception to handle errors in parsing an Extension."""
+    """Exception to handle errors in extension parsing."""
 
     def __init__(self, name):
         super(ExtensionParsingException, self).__init__(name)

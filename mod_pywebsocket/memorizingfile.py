@@ -64,7 +64,11 @@ class MemorizingFile(object):
         self._buffered_line = None
 
     def __getattribute__(self, name):
-        """Return a file attribute."""
+        """Return a file attribute.
+        
+        Returns the value overridden by this class for some attributes,
+        and forwards the call to _file for the other attributes.
+        """
         if name in ('_file', '_memorized_lines', '_max_memorized_lines',
                     '_buffered', '_buffered_line', 'readline',
                     'get_memorized_lines'):
